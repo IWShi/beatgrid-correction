@@ -1,0 +1,33 @@
+{
+  "applicationId": "js.neutralino.zero",
+  "version": "1.0.0",
+  "defaultMode": "window",
+  "documentRoot": "/beatgrid-app/build/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "nativeAllowList": [
+    "app.*",
+    "os.*",
+    "filesystem.*",
+    "window.*",
+    "server.*"
+  ],
+  "modes": {
+    "window": {
+      "title": "Beatgrid Correction",
+      "width": 800,
+      "height": 500,
+      "minWidth": 400,
+      "minHeight": 200,
+      "icon": "/beatgrid-app/public/logo192.png"
+    }
+  },
+  "cli": {
+    "binaryName": "myapp",
+    "resourcesPath": "/beatgrid-app/build/",
+    "extensionsPath": "/extensions/",
+    "binaryVersion": "5.6.0",
+    "clientVersion": "5.4.0"
+  }
+}
