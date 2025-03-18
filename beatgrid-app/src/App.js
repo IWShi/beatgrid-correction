@@ -62,10 +62,18 @@ class App extends React.Component {
                   beatgrid file have been loaded. Once a beatgrid file has been loaded, any audio file specified in the
                   beatgrid file may be loaded without having to reload the beatgrid file. <br></br><br></br>
 
+                  <strong>Interpreting the beatgrid:</strong> The text next to each beat marker is of the form "[measure number].[beat number]".
+                  All songs are beatgridded in 4/4 time. If you hover over a colored section of the waveform, text will appear in the upper
+                  lefthand corner corresponding to what the software thinks the tempo (in BPM) is of that section (this text is 
+                  sometimes hard to see, so it may be easier to hover over sections in the overview waveform instead of the 
+                  zoomed-in waveform). Different colors correspond to different tempos; two sections with the same color are 
+                  thought by the software to have the same tempo. <br></br><br></br>
+
                   <strong>Editing the beatgrid:</strong> Tempo markers are green, downbeats are red, and all other beat
                   markers are blue. Only tempo markers may be moved by clicking and dragging on the rectangular handle. 
                   To create a new tempo marker, click on an existing beat marker (that is not already a tempo marker). 
-                  To get rid of a tempo marker (and make it into a regular beat marker), double-click on the marker.
+                  To get rid of a tempo marker (and make it into a regular beat marker), double-click on the marker. 
+                  When a tempo marker is moved, this will affect the sections both before and after the moved tempo marker.
                 </p>
               : null
           }
