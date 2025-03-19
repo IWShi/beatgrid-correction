@@ -3,7 +3,7 @@ import React from 'react';
 import Button from 'react-bootstrap/Button';
 import ButtonToolbar from 'react-bootstrap/ButtonToolbar';
 import Peaks from 'peaks.js';
-import { os, filesystem, server } from '@neutralinojs/lib';
+import { app, os, filesystem, server, events } from '@neutralinojs/lib';
 import { colors } from './colors.js';
 
 class WaveformView extends React.Component {
@@ -32,6 +32,8 @@ class WaveformView extends React.Component {
         this.firstBeatLabel = null;
 
         this.beatgrid_xml_file = props.beatgrid_xml_file;
+        this.previously_written_file = this.beatgrid_xml_file;
+
         this.mounted_dirs = [];
     }
     
@@ -68,13 +70,21 @@ class WaveformView extends React.Component {
                 <Button onClick={this.loadNewAudio}>Choose audio</Button>&nbsp;
             </ButtonToolbar>
             <ButtonToolbar>
-                <Button onClick={this.saveBeatgrid}>Save current beatgrid</Button>&nbsp;
+                <Button onClick={() => this.saveBeatgrid(true)}>Save beatgrid</Button>&nbsp;
+                <Button onClick={() => this.saveBeatgrid(false)}>Save beatgrid as...</Button>&nbsp;
             </ButtonToolbar>
             </div>
         );
     }
     
-    componentDidMount() {
+    componentDidMount = async () => {
+        // let mounts = await server.getMounts();
+        // console.log("mounts: ", mounts);
+        // for (let path of Object.values(mounts)) {
+        //     await server.unmount(path);
+        // };
+        // console.log("all unmounted");
+
         this.initPeaks();
     }
 
@@ -94,7 +104,12 @@ class WaveformView extends React.Component {
     componentWillUnmount = async () => {
         if (this.peaks) {
             this.peaks.destroy();
-        } 
+        }      
+
+        for (let i = 0; i < this.mounted_dirs.length; i++) {
+            await server.unmount(this.mounted_dirs[i]);
+        }
+        this.mounted_dirs = [];
     }
     
     initPeaks() {
@@ -139,7 +154,7 @@ class WaveformView extends React.Component {
     loadNewAudio = async () => {
         let entries = await os.showOpenDialog('Open a file', {
           filters: [
-            {name: 'audiowaveform allowed inputs', extensions: ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'raw', 'dat', 'json']}
+            {name: 'audiowaveform allowed inputs', extensions: ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'raw', 'dat', 'json', 'm4a']}
           ]
         });
     
@@ -152,6 +167,11 @@ class WaveformView extends React.Component {
         if (index === -1) {
             this.mounted_dirs.push(pathParts.parentPath);
             dir_name = "/audio" + (this.mounted_dirs.length - 1).toString();
+            console.log("dir name: ", dir_name);
+            console.log("mounted dirs: ", this.mounted_dirs);
+            console.log("path parts: ", pathParts);
+            let mounts = await server.getMounts();
+            console.log("mounts: ", mounts);
             await server.mount(dir_name, pathParts.parentPath);
         } else {
             dir_name = "/audio" + index.toString();
@@ -194,7 +214,7 @@ class WaveformView extends React.Component {
         });
     };
     
-    onPeaksReady() {
+    onPeaksReady = async () => {
         console.log("Peaks instance ready");
         const zoomview = this.peaks.views.getView('zoomview');
         //zoomview.enableSegmentDragging(true);
@@ -589,33 +609,6 @@ class WaveformView extends React.Component {
         this.files_to_tempo_markers.set(this.state.full_filepath, tempo_markers);
     }    
 
-    // handleDblClick = (event) => {
-    //     let points = this.getSortedPoints();
-    //     let time = this.round(event.time);
-    //     var removedBeat = false;
-    //     for (var i = 0; i < points.length; i++) {
-    //         if (Math.abs(points[i].time - time) <= 0.01) {
-    //             this.peaks.points.removeByTime(points[i].time);
-    //             removedBeat = true;
-    //             break;
-    //         }
-
-    //         if (points[i].time > time) {
-    //             break;
-    //         }
-    //     }
-
-    //     if (!removedBeat) {
-    //         this.peaks.points.add({
-    //             time: time,
-    //             editable: true
-    //         });
-    //     }
-
-    //     this.relabelPoints();
-    //     this.recalculateSegments();
-    // }
-
     calculateNextBeatLabel(curBeatLabel) {
         var tempo_markers = this.files_to_beatgrid.get(this.state.full_filepath);
         var meter = tempo_markers[0].get("meter");
@@ -836,7 +829,7 @@ class WaveformView extends React.Component {
         }
     };
 
-    saveBeatgrid = async () => {
+    saveBeatgrid = async (write_to_previous_file) => {
         let tempo_markers_as_str = "";
         let points = this.getSortedPoints();
         for (let i = 0; i < points.length; i++) {
@@ -857,9 +850,12 @@ class WaveformView extends React.Component {
                 'Metro="4/4" Battito="' + beat_num + '"/>\r\n';
         }
 
-        console.log("filepath:", this.beatgrid_xml_file);
+        if (this.previously_written_file === null) {
+            this.previously_written_file = this.beatgrid_xml_file;
+        }
+        console.log("filepath:", this.previously_written_file);
 
-        let data = await filesystem.readFile(this.beatgrid_xml_file);
+        let data = await filesystem.readFile(this.previously_written_file);
         var lines = data.split("\r\n");
 
         let file_content = "";
@@ -885,7 +881,25 @@ class WaveformView extends React.Component {
             }
         }
 
-        await filesystem.writeFile(this.beatgrid_xml_file, file_content);
+        if (write_to_previous_file) {
+            console.log("writing beatgrid to ", this.previously_written_file);
+            await filesystem.writeFile(this.previously_written_file, file_content);
+        } else {
+            let beatgridPath = await filesystem.getPathParts(this.beatgrid_xml_file);
+            let path = await os.showSaveDialog('Save to file', {
+                defaultPath: beatgridPath.parentPath,
+                filters: [{name: 'beatgrid checkpoint file', extensions: ['xml']}]
+            });
+
+            let pathParts = await filesystem.getPathParts(path);
+            path = pathParts.parentPath + "/" + pathParts.stem + ".xml";
+            
+            console.log("writing beatgrid to ", path);
+            await filesystem.writeFile(path, file_content);
+            
+            this.previously_written_file = path;
+        }
+
         console.log("finished writing beatgrid file");
     };
 }

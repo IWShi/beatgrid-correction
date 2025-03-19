@@ -11,7 +11,8 @@
     "os.*",
     "filesystem.*",
     "window.*",
-    "server.*"
+    "server.*",
+    "events.*"
   ],
   "modes": {
     "window": {
@@ -20,6 +21,7 @@
       "height": 500,
       "minWidth": 400,
       "minHeight": 200,
+      "enableInspector": true,
       "icon": "/beatgrid-app/public/logo192.png"
     }
   },
