@@ -27,3 +27,7 @@ While using the app, saving your current beatgrid will overwrite the XML file ge
 If you load a new audio track before saving the beatgrid of the previous audio track, your changes to the beatgrid will be lost.
 
 If you have questions about how to use the app, there is a Help button located at the bottom of the app window with useful tips.
+
+## User Test
+
+Please open this Google form and follow all the instructions: https://forms.gle/nb1e1UcgS8gVuWPj7.
