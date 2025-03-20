@@ -3,7 +3,7 @@ import React from 'react';
 import Button from 'react-bootstrap/Button';
 import ButtonToolbar from 'react-bootstrap/ButtonToolbar';
 import Peaks from 'peaks.js';
-import { app, os, filesystem, server, events } from '@neutralinojs/lib';
+import { os, filesystem, server } from '@neutralinojs/lib';
 import { colors } from './colors.js';
 
 class WaveformView extends React.Component {
@@ -78,12 +78,11 @@ class WaveformView extends React.Component {
     }
     
     componentDidMount = async () => {
-        // let mounts = await server.getMounts();
-        // console.log("mounts: ", mounts);
-        // for (let path of Object.values(mounts)) {
-        //     await server.unmount(path);
-        // };
-        // console.log("all unmounted");
+        let mounts = await server.getMounts();
+        for (let mount of Object.keys(mounts)) {
+            await server.unmount(mount);
+        };
+        console.log("all unmounted");
 
         this.initPeaks();
     }
@@ -105,11 +104,6 @@ class WaveformView extends React.Component {
         if (this.peaks) {
             this.peaks.destroy();
         }      
-
-        for (let i = 0; i < this.mounted_dirs.length; i++) {
-            await server.unmount(this.mounted_dirs[i]);
-        }
-        this.mounted_dirs = [];
     }
     
     initPeaks() {
@@ -154,7 +148,7 @@ class WaveformView extends React.Component {
     loadNewAudio = async () => {
         let entries = await os.showOpenDialog('Open a file', {
           filters: [
-            {name: 'audiowaveform allowed inputs', extensions: ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'raw', 'dat', 'json', 'm4a']}
+            {name: 'audiowaveform allowed inputs', extensions: ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'raw', 'dat', 'json']}
           ]
         });
     
@@ -167,11 +161,6 @@ class WaveformView extends React.Component {
         if (index === -1) {
             this.mounted_dirs.push(pathParts.parentPath);
             dir_name = "/audio" + (this.mounted_dirs.length - 1).toString();
-            console.log("dir name: ", dir_name);
-            console.log("mounted dirs: ", this.mounted_dirs);
-            console.log("path parts: ", pathParts);
-            let mounts = await server.getMounts();
-            console.log("mounts: ", mounts);
             await server.mount(dir_name, pathParts.parentPath);
         } else {
             dir_name = "/audio" + index.toString();
@@ -182,6 +171,24 @@ class WaveformView extends React.Component {
         console.log(filename + " fetched");
     
         var output_filename = pathParts.stem + ".dat"; 
+        let filename_index = 0;
+        let unique_filename = false;
+
+        while (true) {
+            try {
+                let stats = await filesystem.getStats(output_filename);
+            } catch(err) {
+                unique_filename = true;
+            } 
+
+            if (unique_filename) {
+                break;
+            }
+
+            output_filename = pathParts.stem + filename_index.toString() + ".dat";
+            filename_index++;
+        }
+
         var cmd = "audiowaveform -i '" + audio_source + "' -o '" + output_filename + "' -b 8";
         let info = await os.execCommand(cmd);
         console.log("audiowaveform cmd:", cmd);

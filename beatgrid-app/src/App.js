@@ -3,7 +3,7 @@ import React from 'react';
 import Button from 'react-bootstrap/Button';
 
 import WaveformView from './WaveformView';
-import { app, os, filesystem, window, events } from '@neutralinojs/lib';
+import { os, filesystem, window } from '@neutralinojs/lib';
 
 function readVal(line, attrName) {
   var idx = line.indexOf(attrName);
@@ -28,8 +28,6 @@ class App extends React.Component {
     };
 
     this.setWindow();
-
-    events.on("windowClose", () => app.exit());
   }
 
   render() {
@@ -50,6 +48,9 @@ class App extends React.Component {
                   <strong>Choose audio:</strong> Click this button to load an audio file. 
                   In order for the beatgrid to load properly, the chosen audio file must also have already been 
                   loaded into rekordbox. <br></br><br></br>
+
+                  <strong>Accepted audio file types:</strong> MP3, WAV, FLAC, OGG, OGA, OPUS, RAW, DAT, JSON
+                  <br></br><br></br>
 
                   <strong>Save beatgrid:</strong> Click this button to save the current tempo markers to the most 
                   recently edited/loaded beatgrid file. Note that this will overwrite the tempo markers in the file 
