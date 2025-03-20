@@ -839,6 +839,7 @@ class WaveformView extends React.Component {
     saveBeatgrid = async (write_to_previous_file) => {
         let tempo_markers_as_str = "";
         let points = this.getSortedPoints();
+        let tempo_markers = [];
         for (let i = 0; i < points.length; i++) {
             if (!points[i].editable) {
                 continue;
@@ -855,6 +856,13 @@ class WaveformView extends React.Component {
                 '      <TEMPO Inizio="' + this.roundTime(points[i].time).toString() + '" ' +
                 'Bpm="' + segment.labelText + '" ' +
                 'Metro="4/4" Battito="' + beat_num + '"/>\r\n';
+
+            let tempo_marker = new Map();
+            tempo_marker.set("sec", this.roundTime(points[i].time));
+            tempo_marker.set("bpm", Number(segment.labelText));
+            tempo_marker.set("meter", [4, 4]);
+            tempo_marker.set("beat", Number(beat_num));
+            tempo_markers.push(tempo_marker);
         }
 
         if (this.previously_written_file === null) {
@@ -907,7 +915,9 @@ class WaveformView extends React.Component {
             this.previously_written_file = path;
         }
 
-        console.log("finished writing beatgrid file");
+        this.files_to_beatgrid.set(this.state.full_filepath, tempo_markers);
+
+        console.log("finished writing beatgrid file and updating files_to_beatgrid");
     };
 }
 
