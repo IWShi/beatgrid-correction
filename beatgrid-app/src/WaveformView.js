@@ -44,7 +44,12 @@ class WaveformView extends React.Component {
     
     render() {
         return (
-            <div>
+            <div 
+                class="noSelect"
+                onKeyUp={this.onKeyUp.bind(this)}
+                onKeyDown={this.onKeyDown.bind(this)}
+                tabIndex="0"
+            >
                 <div className="zoomview-container" 
                     ref={this.zoomviewRef} 
                     onWheel={this.handleWheel}
@@ -135,6 +140,32 @@ class WaveformView extends React.Component {
             if (scrollbar) {
                 scrollbar.fitToContainer();
             }
+        }
+    }
+
+    onKeyUp(event) {
+        if (event.key === " " && this.peaks) {
+            if (document.getElementById("audio").paused) {
+                this.peaks.player.play();
+            } else {
+                this.peaks.player.pause();
+            }
+        }
+    }
+
+    onKeyDown(event) {
+        if (this.peaks) {
+            const duration = this.peaks.player.getDuration();
+            const curTime = this.peaks.player.getCurrentTime();
+
+            let seekTime;
+            if (event.key === "ArrowRight") {
+                seekTime = Math.min(duration - 0.001, curTime + 0.1);
+            } else if (event.key === "ArrowLeft") {
+                seekTime = Math.max(0.0, curTime - 0.1);
+            }
+
+            this.peaks.player.seek(seekTime);
         }
     }
     
