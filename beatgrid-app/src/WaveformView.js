@@ -18,8 +18,11 @@ class WaveformView extends React.Component {
         this.state = {
             full_filepath: "initial.mp3",
             audio_source: "initial.mp3",
-            waveform_data: "initial.dat"
+            waveform_data: "initial.dat",
+            windowSize: window.innerWidth
         };
+        
+        this.handleResize = this.handleResize.bind(this);
 
         this.files_to_beatgrid = props.files_to_beatgrid;
         this.files_to_tempo_markers = new Map();
@@ -33,6 +36,8 @@ class WaveformView extends React.Component {
 
         this.beatgrid_xml_file = props.beatgrid_xml_file;
         this.previously_written_file = this.beatgrid_xml_file;
+
+        this.zoomLevel = 10.0;  // in seconds
 
         this.mounted_dirs = [];
     }
@@ -78,6 +83,8 @@ class WaveformView extends React.Component {
     }
     
     componentDidMount = async () => {
+        window.addEventListener("resize", this.handleResize);
+
         let mounts = await server.getMounts();
         for (let mount of Object.keys(mounts)) {
             await server.unmount(mount);
@@ -101,9 +108,34 @@ class WaveformView extends React.Component {
     }
 
     componentWillUnmount = async () => {
+        window.addEventListener("resize", null);
+
         if (this.peaks) {
             this.peaks.destroy();
         }      
+    }
+
+    // adapted from https://stackoverflow.com/questions/45644457/action-on-window-resize-in-react
+    handleResize(windowSize, event) {
+        this.setState({windowSize: window.innerWidth});
+
+        if (this.peaks) {
+            const zoomview = this.peaks.views.getView("zoomview");
+            const overview = this.peaks.views.getView("overview");
+            const scrollbar = this.peaks.views.getScrollbar();
+
+            if (zoomview) {
+                zoomview.fitToContainer();
+            }
+
+            if (overview) {
+                overview.fitToContainer();
+            }
+
+            if (scrollbar) {
+                scrollbar.fitToContainer();
+            }
+        }
     }
     
     initPeaks() {
@@ -224,10 +256,9 @@ class WaveformView extends React.Component {
     onPeaksReady = async () => {
         console.log("Peaks instance ready");
         const zoomview = this.peaks.views.getView('zoomview');
-        //zoomview.enableSegmentDragging(true);
         zoomview.setSegmentDragMode('no-overlap');
-        //zoomview.setWaveformDragMode('insert-segment');
         zoomview.setWheelMode('scroll');
+        zoomview.setZoom({seconds: this.zoomLevel});
 
         this.updateBeatgrid();
     }
@@ -826,13 +857,25 @@ class WaveformView extends React.Component {
  
     zoomIn = () => {
         if (this.peaks) {
-          this.peaks.zoom.zoomIn();
+            const zoomview = this.peaks.views.getView('zoomview'); 
+            if (this.state.windowSize / (Math.floor(this.zoomLevel) - 1.0) < 170.0) {
+                this.zoomLevel = Math.floor(this.zoomLevel) - 1.0;
+                zoomview.setZoom({seconds: this.zoomLevel});
+            }
         }
     };
     
     zoomOut = () => {
         if (this.peaks) {
-            this.peaks.zoom.zoomOut();
+            const duration = this.peaks.player.getDuration();
+            const zoomview = this.peaks.views.getView('zoomview');
+            if (this.zoomLevel + 2 > duration && this.zoomLevel + 1 <= duration) {
+                this.zoomLevel = duration;
+                zoomview.setZoom({seconds: this.zoomLevel});
+            } else if (this.zoomLevel < duration) {
+                this.zoomLevel++;
+                zoomview.setZoom({seconds: this.zoomLevel});
+            }
         }
     };
 
