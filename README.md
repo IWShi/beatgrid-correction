@@ -1,4 +1,4 @@
-# User Interface for the Correction of Software-Generated Beatgrids for Music
+# GridFix: User Interface for the Correction of Software-Generated Beatgrids for Music
 
 ## Installation Requirements
 
