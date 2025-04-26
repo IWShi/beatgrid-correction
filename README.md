@@ -44,7 +44,3 @@ Once you have an XML file containing beatgrid data that you're satisfied with, f
 4. On the left side of the screen, look for the column of little icons giving various display options. Scroll through until you find the one that is for displaying rekordbox xml. Click on the icon to change to this display view.
     * If you don't see this display option, go to rekordbox -> Preferences -> View and click the Layout tab. Make sure rekordbox xml is checked off under Media Browser.
 6. In this display view, double-click on the track whose beatgrid you want to import. You will be asked if you would like to overwrite the existing beatgrid data; choose yes.
-
-## User Test
-
-Please open this Google form and follow all the instructions: https://forms.gle/nb1e1UcgS8gVuWPj7.
